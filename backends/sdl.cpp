@@ -40,7 +40,7 @@ struct SDLBackend: renderer {
                                            1000, 1000, SDL_WINDOW_RESIZABLE);
         this->window = win;
         this->renderer = SDL_CreateRenderer(win, -1, 0);
-        this->pixel_size = 0.5;
+        this->pixel_size = 10;
     }
     void render_blocks(block_t* blocks, v2 res) override {
         // Fill screen

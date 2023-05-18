@@ -9,7 +9,7 @@ if sdl.found()
   add_project_arguments('-DHAVE_SDL', language: 'c')
 endif
 
-sources = files('vector.c', 'vector.h', 'map.c', 'map.h')
+sources = files('vector.c', 'vector.h', 'map.c', 'map.h', 'gen.c', 'gen.h')
 subdir('backends')
 
 executable('cmaze', 'main.c', sources: sources, include_directories: ['backends', '.'], dependencies: [math, sdl])

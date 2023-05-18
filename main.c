@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "gen.h"
 #include "backends/sdl.h"
 #include "backends/render.h"
 #include "map.h"
@@ -23,10 +24,10 @@ void msleep(int milliseconds) {
 #define printint(X) ({int Y = X; printf(#X": %d\n", Y); Y;})
 #define tabs(num) for(int i = 0; i < num; i++) putchar(' ')
 
-
 void map_render(map_t *map) {
     renderer_render_blocks(render, map->blocks, (v2){map->width, map->height});
 }
+
 void map_set_walls(map_t* map) {
 
     // Up and down
@@ -62,7 +63,7 @@ bool sdl_should_quit() {
 
 void render_map_step(random_map_data_t* data) {
     if(sdl_should_quit()) exit(-1);
-    // map_render(data->map);
+    map_render(data->map);
     return;
 }
 
