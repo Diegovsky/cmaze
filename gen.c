@@ -85,7 +85,7 @@ static void create_random_walls(random_map_data_t* data, v2 start) {
     while(data->stack_len > 0) {
         map_gen_frame_t* curframe = current_frame(data);
         const v2 pos = curframe->pos;
-        enum Direction dir = curframe->dir;
+        const enum Direction dir = curframe->dir;
         const int id = curframe->id;
         if (!wall_can_die(map, pos, dir)) {
             data->stack_len--;
@@ -94,7 +94,7 @@ static void create_random_walls(random_map_data_t* data, v2 start) {
         data->on_update(data);
         const v2 vdir = dir_to_vector(dir);
         printf("len: %d\n", data->stack_len);
-        while(wall_can_die(map, pos, dir)) {
+        while(wall_can_die(map, pos, dir) && curframe->i++ >= curframe->maxlen) {
             map_set_v2(map, pos, id);
 
             const v2 newpos = vadd(pos, vdir);
@@ -107,9 +107,6 @@ static void create_random_walls(random_map_data_t* data, v2 start) {
             }
 
             curframe->pos = newpos;
-            if(curframe->i++ >= curframe->maxlen){
-                break;
-            }
         }
         data->stack_len--;
         continue_start:;
