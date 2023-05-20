@@ -17,7 +17,8 @@ bool map_get(map_t *map, size_t x, size_t y) {
     if (x >= map->width || y >= map->height || x < 0 || y < 0) {
         return false;
     }
-    return map->blocks[y * map->width + x] == 0;
+    block_t val = map->blocks[y * map->width + x];
+    return val <= 0;
 }
 
 bool map_get_v2(map_t *map, v2 pos) {

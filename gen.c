@@ -8,8 +8,11 @@
 #include <assert.h>
 
 #include "gen.h"
+#include "map.h"
 
-#define dir_add(dir, i) (((dir) + (i)) % 4)
+#define printint(X) ({int Y = X; printf(#X": %d\n", Y); Y;})
+
+#define dir_add(dir, i) (((dir) + (i)) % DIRECTION_COUNT)
 
 bool randbool() {
     return rand() % 2;
@@ -19,7 +22,7 @@ int randint(int min, int max) {
     if (min >= max) {
         exit(-1);
     }
-    return rand() % (max - min) + min;
+    return rand() % (max - min+1) + min;
 }
 
 
@@ -47,25 +50,36 @@ enum Direction dir_random_turn(enum Direction dir) {
     return dir_add(dir, randbool() ? -1 : 1);
 }
 
+static block_t map_getset(map_t* map, v2 pos) {
+    bool b = map_get_v2(map, pos);
+    if(b)
+        map_set_v2(map, pos, -1);
+    return b;
+}
+
 
 static bool wall_can_die(map_t* map, v2 pos, enum Direction dir) {
     v2 nextpos = vadd(dir_to_vector(dir), pos);
     v2 lnextpos = vadd(nextpos, dir_to_vector(dir_add(dir, 1)));
     v2 rnextpos = vadd(nextpos, dir_to_vector(dir_add(dir, -1)));
-    return map_get_v2(map, nextpos) && map_get_v2(map, lnextpos) && map_get_v2(map, rnextpos);
+    return map_getset(map, nextpos) && map_getset(map, lnextpos) && map_getset(map, rnextpos);
 }
 
 static void resize_stack(random_map_data_t* data, size_t new_cap) {
+    if(new_cap == 0 && data->stack_cap == 0) {
+        new_cap = 16;
+    }
     assert(new_cap > data->stack_cap);
     data->stack = realloc(data->stack, sizeof(map_gen_frame_t) * new_cap);
     data->stack_cap = new_cap;
 }
 
 static void push_frame(random_map_data_t* data, enum Direction dir, v2 start, block_t id) {
-    if (data->stack_len+1 >= data->stack_cap) {
+    if (data->stack_len >= data->stack_cap) {
         resize_stack(data, data->stack_cap*2);
     }
     int maxlen = randint(1, 4)*2;
+    map_set_v2(data->map, vadd(start, dir_to_vector(dir)), -2);
     map_gen_frame_t new_frame = {.dir=randint(0, 3), .id=id, .pos=start, .i=0, .maxlen=maxlen};
     data->stack[data->stack_len++] = new_frame;
 }
@@ -77,41 +91,41 @@ static map_gen_frame_t* current_frame(random_map_data_t* data) {
     return NULL;
 }
 
-static void create_random_walls(random_map_data_t* data, v2 start) {
-    map_t* map = data->map;
-    resize_stack(data, 64);
-    data->stack_len = 0;
-    push_frame(data, randint(0, 3), start, 0);
-    while(data->stack_len > 0) {
-        map_gen_frame_t* curframe = current_frame(data);
-        const v2 pos = curframe->pos;
-        const enum Direction dir = curframe->dir;
-        const int id = curframe->id;
-        if (!wall_can_die(map, pos, dir)) {
-            data->stack_len--;
-            continue;
-        }
+typedef enum {
+    CLOSE,
+    CONTINUE,
+} ClosureStatus;
+
+static ClosureStatus closure(random_map_data_t* data) {
+    map_gen_frame_t* frame = current_frame(data);
+    v2* pos = &frame->pos;
+    v2 vdir = dir_to_vector(frame->dir);
+    while(frame->i++ <= frame->maxlen && wall_can_die(data->map, *pos, frame->dir)) {
         data->on_update(data);
-        const v2 vdir = dir_to_vector(dir);
-        printf("len: %d\n", data->stack_len);
-        while(wall_can_die(map, pos, dir) && curframe->i++ >= curframe->maxlen) {
-            map_set_v2(map, pos, id);
-
-            const v2 newpos = vadd(pos, vdir);
-            // fork
-            if(curframe->i & 2) {
-                int fork_dir = dir_random_turn(dir);
-                push_frame(data, dir_add(fork_dir, -1), newpos, id+1);
-                push_frame(data, dir_add(fork_dir, 1), newpos, id+1);
-                goto continue_start;
-            }
-
-            curframe->pos = newpos;
+        map_set_v2(data->map, *pos, frame->id);
+        const v2 oldpos = *pos;
+        if(frame->i&2) {
+            const enum Direction newdir = dir_random_turn(frame->dir);
+            const int id = frame->id;
+            push_frame(data, newdir, *pos, id+1);
+            push_frame(data, dir_add(newdir, 2), *pos, id+1);
+            return CONTINUE;
         }
-        data->stack_len--;
-        continue_start:;
+        *pos = vadd(*pos, vdir);
+    }
+    return CLOSE;
+}
+
+static void create_random_walls(random_map_data_t* data, v2 start) {
+    data->stack_len = 0;
+    push_frame(data, randint(0, DIRECTION_COUNT-1), start, 1);
+    while(data->stack_len > 0) {
+        if(closure(data) == CLOSE) {
+            data->stack_len--;
+        }
     }
     free(data->stack);
+    data->stack = NULL;
     data->stack_len = 0;
     data->stack_cap = 0;
     return;
@@ -127,12 +141,16 @@ void map_create_random(map_t *map, float scale, int fps, random_map_update on_up
         .exit_down = {.x=holedown, .y = map->height-1},
         .fps = fps,
         .on_update = on_update,
+        .stack = NULL,
+        .stack_len = 0,
+        .stack_cap = 0,
     };
 
 
     // map_set_walls(map);
 
     create_random_walls(&data, (v2){1, 1});
+    // create_random_walls(&data, (v2){map->width/2, map->height/2});
     create_random_walls(&data, (v2){1, map->height/2});
     create_random_walls(&data, (v2){1, map->height-2});
 

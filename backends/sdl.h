@@ -4,4 +4,4 @@
 
 #include <SDL2/SDL.h>
 
-renderer_t* renderer_new_sdl(int fps);
+renderer_t* renderer_new_sdl(double pixel_size);

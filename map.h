@@ -3,10 +3,10 @@
 #include "stdbool.h"
 #include "vector.h"
 #include <stddef.h>
-typedef int block_t;
+typedef long block_t;
 
 typedef struct {
-    int *blocks;
+    block_t *blocks;
     size_t width;
     size_t height;
 } map_t ;

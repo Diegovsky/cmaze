@@ -63,6 +63,7 @@ bool sdl_should_quit() {
 
 void render_map_step(random_map_data_t* data) {
     if(sdl_should_quit()) exit(-1);
+    msleep(1000/data->fps);
     map_render(data->map);
     return;
 }
@@ -81,11 +82,11 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         scale = atof(argv[1]);
     }
-    render = renderer_new_sdl(60);
+    render = renderer_new_sdl(30);
     v2 res = renderer_get_resolution(render);
     map_t *map = map_create(res.x, res.y);
     map_render(map);
-    map_create_random(map, scale, 10000, render_map_step);
+    map_create_random(map, scale, 2, render_map_step);
     map_render(map);
     int dt = 1000/60;
     while(time > 0) {

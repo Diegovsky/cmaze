@@ -24,11 +24,10 @@ struct SDLBackend: renderer {
     SDL_Window* window;
     SDL_Renderer* renderer;
     double pixel_size;
-    int fps;
     std::deque<int> keys;
     
 
-    SDLBackend(int fps): fps(fps) {
+    SDLBackend(double pixel_size): pixel_size(pixel_size) {
 
         if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
             printf("error initializing SDL: %s\n", SDL_GetError());
@@ -40,7 +39,6 @@ struct SDLBackend: renderer {
                                            1000, 1000, SDL_WINDOW_RESIZABLE);
         this->window = win;
         this->renderer = SDL_CreateRenderer(win, -1, 0);
-        this->pixel_size = 10;
     }
     void render_blocks(block_t* blocks, v2 res) override {
         // Fill screen
@@ -49,12 +47,22 @@ struct SDLBackend: renderer {
         size_t offset = CENTER_OFFSET/2;
         for (size_t y = 0; y < res.y; y++) {
             for (size_t x = 0; x < res.x; x++) {
-                if (blocks[y * res.x + x]) {
-                    int color = blocks[y * res.x + x];
-                    int r = color & 0xFF;
-                    int g = ((float)x / res.x) * 255;
-                    int b = ((float)y / res.y) * 255;
-                    SDL_SetRenderDrawColor(this->renderer, r, g, b, 255);
+                block_t value = blocks[y * res.x + x];
+                if (value) {
+                    if(value < 0) {
+                        if(value == -1)
+                            SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, 255);
+                        else if(value == -2)
+                            SDL_SetRenderDrawColor(this->renderer, 127, 127, 255, 255);
+                        else
+                            SDL_SetRenderDrawColor(this->renderer, COLOR_WALL);
+                    } else {
+                        int color = blocks[y * res.x + x];
+                        int r = color & 0xFF;
+                        int g = ((float)x / res.x) * 255;
+                        int b = ((float)y / res.y) * 255;
+                        SDL_SetRenderDrawColor(this->renderer, r, g, b, 255);
+                    }
                 } else {
                     SDL_SetRenderDrawColor(this->renderer, COLOR_WALL);
                 }
@@ -102,7 +110,7 @@ struct SDLBackend: renderer {
 
 
 
-extern "C" renderer_t* renderer_new_sdl(int fps) {
-    SDLBackend* sdl = new(malloc(sizeof(SDLBackend))) SDLBackend(fps);
+extern "C" renderer_t* renderer_new_sdl(double pixel_size) {
+    SDLBackend* sdl = new(malloc(sizeof(SDLBackend))) SDLBackend(pixel_size);
     return sdl;
 }

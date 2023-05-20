@@ -7,7 +7,8 @@ enum Direction {
     UP,
     RIGHT,
     DOWN,
-    LEFT
+    LEFT,
+    DIRECTION_COUNT
 };
 
 typedef struct {
@@ -27,8 +28,8 @@ typedef struct random_map_data {
     random_map_update on_update;
     int fps;
     map_gen_frame_t *stack;
-    int stack_cap;
-    int stack_len;
+    size_t stack_cap;
+    size_t stack_len;
 } random_map_data_t;
 
 void map_create_random(map_t *map, float scale, int fps, random_map_update on_update);
