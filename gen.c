@@ -12,8 +12,6 @@
 
 #define printint(X) ({int Y = X; printf(#X": %d\n", Y); Y;})
 
-#define dir_add(dir, i) (((dir) + (i)) % DIRECTION_COUNT)
-
 bool randbool() {
     return rand() % 2;
 }
@@ -40,6 +38,10 @@ v2 dir_to_vector(enum Direction dir) {
             puts("Invalid direction");
             exit(-1);
     }
+}
+
+static inline enum Direction dir_add(enum Direction dir, int i) {
+    return ((dir) + (i)) % DIRECTION_COUNT;
 }
 
 inline static bool dir_is_opposite(enum Direction dir1, enum Direction dir2) {

@@ -29,7 +29,9 @@ void map_set(map_t *map, size_t x, size_t y, block_t value) {
     if (x >= map->width || y >= map->height || x < 0 || y < 0) {
         return;
     }
-    map->blocks[y * map->width + x] = value;
+    block_t* val = &map->blocks[y * map->width + x];
+    if((*val == -2 && value == -1) || (*val > 0)) return;
+    *val = value;
 }
 
 void map_set_v2(map_t *map, v2 pos, block_t value) {

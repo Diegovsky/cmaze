@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     v2 res = renderer_get_resolution(render);
     map_t *map = map_create(res.x, res.y);
     map_render(map);
-    map_create_random(map, scale, 2, render_map_step);
+    map_create_random(map, scale, 10, render_map_step);
     map_render(map);
     int dt = 1000/60;
     while(time > 0) {
