@@ -49,41 +49,26 @@ inline static bool dir_is_opposite(enum Direction dir1, enum Direction dir2) {
 }
 
 enum Direction dir_random_turn(enum Direction dir) {
-    return dir_add(dir, randbool() ? -1 : 1);
+    return randint(0, 1) ? dir_add(dir, 1) : dir_add(dir, -1);
 }
-
-static block_t map_getset(map_t* map, v2 pos) {
-    bool b = map_get_v2(map, pos);
-    if(b)
-        map_set_v2(map, pos, -1);
-    return b;
-}
-
 
 static bool wall_can_die(map_t* map, v2 pos, enum Direction dir) {
-    v2 nextpos = vadd(dir_to_vector(dir), pos);
+    v2 nextpos = vadd(pos, dir_to_vector(dir));
     v2 lnextpos = vadd(nextpos, dir_to_vector(dir_add(dir, 1)));
     v2 rnextpos = vadd(nextpos, dir_to_vector(dir_add(dir, -1)));
-    return map_getset(map, nextpos) && map_getset(map, lnextpos) && map_getset(map, rnextpos);
+    return map_get_v2(map, nextpos) && map_get_v2(map, lnextpos) && map_get_v2(map, rnextpos);
 }
 
 static void resize_stack(random_map_data_t* data, size_t new_cap) {
     if(new_cap == 0 && data->stack_cap == 0) {
-        new_cap = 16;
+        new_cap = 128;
     }
     assert(new_cap > data->stack_cap);
+    /* FILE* fp = fopen("log.txt", "a");
+    fprintf(fp, "%lu\n", new_cap);
+    fclose(fp); */
     data->stack = realloc(data->stack, sizeof(map_gen_frame_t) * new_cap);
     data->stack_cap = new_cap;
-}
-
-static void push_frame(random_map_data_t* data, enum Direction dir, v2 start, block_t id) {
-    if (data->stack_len >= data->stack_cap) {
-        resize_stack(data, data->stack_cap*2);
-    }
-    int maxlen = randint(1, 4)*2;
-    map_set_v2(data->map, vadd(start, dir_to_vector(dir)), -2);
-    map_gen_frame_t new_frame = {.dir=randint(0, 3), .id=id, .pos=start, .i=0, .maxlen=maxlen};
-    data->stack[data->stack_len++] = new_frame;
 }
 
 static map_gen_frame_t* current_frame(random_map_data_t* data) {
@@ -98,29 +83,55 @@ typedef enum {
     CONTINUE,
 } ClosureStatus;
 
+static void push_frame(random_map_data_t* data, enum Direction dir, v2 start, block_t id) {
+    if (data->stack_len >= data->stack_cap) {
+        resize_stack(data, data->stack_cap*8);
+    }
+    int maxlen = randint(3, 8);
+    map_set_v2(data->map, vadd(start, dir_to_vector(dir)), -2);
+    map_gen_frame_t new_frame = {.dir=dir, .id=id, .pos=start, .i=0, .maxlen=maxlen};
+    data->stack[data->stack_len++] = new_frame;
+}
+
+static void fork_path(random_map_data_t* data) {
+    map_gen_frame_t* frame = current_frame(data);
+    const int id = frame->id;
+    const v2 pos = frame->pos;
+
+    enum Direction newdir = dir_random_turn(frame->dir);
+    assert(newdir != frame->dir);
+    push_frame(data, newdir, pos, id+1);
+    frame = current_frame(data);
+
+    newdir = dir_add(newdir, 2);
+    assert(newdir != frame->dir);
+    push_frame(data, newdir, pos, id+1);
+
+}
+
 static ClosureStatus closure(random_map_data_t* data) {
     map_gen_frame_t* frame = current_frame(data);
     v2* pos = &frame->pos;
     v2 vdir = dir_to_vector(frame->dir);
-    while(frame->i++ <= frame->maxlen && wall_can_die(data->map, *pos, frame->dir)) {
-        data->on_update(data);
+    data->on_update(data);
+    int cur_index = data->stack_len-1;
+    while(frame->i++ < frame->maxlen && wall_can_die(data->map, *pos, frame->dir)) {
         map_set_v2(data->map, *pos, frame->id);
-        const v2 oldpos = *pos;
-        if(frame->i&2) {
-            const enum Direction newdir = dir_random_turn(frame->dir);
-            const int id = frame->id;
-            push_frame(data, newdir, *pos, id+1);
-            push_frame(data, dir_add(newdir, 2), *pos, id+1);
+        if((frame->i-1)&2) {
+            fork_path(data);
+            frame = current_frame(data);
+            pos = &frame->pos;
             return CONTINUE;
         }
         *pos = vadd(*pos, vdir);
     }
+    map_set_v2(data->map, *pos, -1);
     return CLOSE;
 }
 
 static void create_random_walls(random_map_data_t* data, v2 start) {
     data->stack_len = 0;
-    push_frame(data, randint(0, DIRECTION_COUNT-1), start, 1);
+    push_frame(data, randint(0, DIRECTION_COUNT-1), start, 0);
     while(data->stack_len > 0) {
         if(closure(data) == CLOSE) {
             data->stack_len--;
@@ -152,13 +163,15 @@ void map_create_random(map_t *map, float scale, int fps, random_map_update on_up
     // map_set_walls(map);
 
     create_random_walls(&data, (v2){1, 1});
-    // create_random_walls(&data, (v2){map->width/2, map->height/2});
+    create_random_walls(&data, (v2){map->width/2, map->height/2});
     create_random_walls(&data, (v2){1, map->height/2});
     create_random_walls(&data, (v2){1, map->height-2});
 
 
     map_set_v2(map, data.exit_down, false);
     map_set_v2(map, data.exit_up, false);
+
+    printf("end\n");
 
 }
 

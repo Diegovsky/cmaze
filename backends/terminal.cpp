@@ -35,9 +35,6 @@ public:
         res.y = w.ws_row-1;
         return res;
     }
-    int get_key() override {
-        return getchar();
-    };
 };
 
 

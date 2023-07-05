@@ -24,10 +24,10 @@ struct SDLBackend: renderer {
     SDL_Window* window;
     SDL_Renderer* renderer;
     double pixel_size;
-    std::deque<int> keys;
+    bool render_markers;
     
 
-    SDLBackend(double pixel_size): pixel_size(pixel_size) {
+    SDLBackend(double pixel_size): pixel_size(pixel_size), render_markers(false) {
 
         if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
             printf("error initializing SDL: %s\n", SDL_GetError());
@@ -50,10 +50,12 @@ struct SDLBackend: renderer {
                 block_t value = blocks[y * res.x + x];
                 if (value) {
                     if(value < 0) {
-                        if(value == -1)
-                            SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, 255);
-                        else if(value == -2)
-                            SDL_SetRenderDrawColor(this->renderer, 127, 127, 255, 255);
+                        if(render_markers) {
+                            if(value == -1)
+                                SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, 255);
+                            else if(value == -2)
+                                SDL_SetRenderDrawColor(this->renderer, 127, 127, 255, 255);
+                        }
                         else
                             SDL_SetRenderDrawColor(this->renderer, COLOR_WALL);
                     } else {
@@ -93,18 +95,14 @@ struct SDLBackend: renderer {
                 case SDL_QUIT:
                     return true;
                 case SDL_KEYDOWN:
-                    this->keys.push_back(event.key.keysym.sym);
+                    puts("raluca");
+                    if(event.key.keysym.sym == SDLK_SPACE)
+                        render_markers = !render_markers;
                     break;
             }
         }
         return false;
     };
-    int get_key() override {
-        if (this->keys.size()) return 0;
-        int r = this->keys[0];
-        this->keys.pop_front();
-        return r;
-    }
 };
 
 
