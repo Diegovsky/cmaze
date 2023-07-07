@@ -4,5 +4,7 @@ backend_sources = files('render.h',
                         'terminal.cpp',
                         'render.cpp',
                         'sdl.cpp',
-                        'sdl.h')
+                        'sdl.h',
+                        'bitmap.h',
+                        'bitmap.cpp')
 sources += backend_sources

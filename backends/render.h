@@ -14,7 +14,8 @@ typedef struct renderer renderer_t;
 #endif
 
 
-void  renderer_render_blocks(renderer_t* render, block_t* blocks, v2 res);
+void  renderer_render_blocks(renderer_t* render, map_t* map);
 v2    renderer_get_resolution(renderer_t* render);
 int   renderer_get_key(renderer_t* render);
 bool  renderer_should_close(renderer_t* render);
+void  renderer_free(renderer_t* render);

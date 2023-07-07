@@ -40,14 +40,17 @@ struct SDLBackend: renderer {
         this->window = win;
         this->renderer = SDL_CreateRenderer(win, -1, 0);
     }
-    void render_blocks(block_t* blocks, v2 res) override {
+    void render_blocks(map_t* map) override {
+        block_t* blocks = map->blocks;
+        int width = map->width;
+        int height = map->height;
         // Fill screen
         SDL_RenderFillRect(this->renderer, NULL);
         SDL_SetRenderDrawColor(this->renderer, COLOR_AIR);
         size_t offset = CENTER_OFFSET/2;
-        for (size_t y = 0; y < res.y; y++) {
-            for (size_t x = 0; x < res.x; x++) {
-                block_t value = blocks[y * res.x + x];
+        for (size_t y = 0; y < height; y++) {
+            for (size_t x = 0; x < width; x++) {
+                block_t value = blocks[y * width + x];
                 if (value) {
                     if(value < 0) {
                         if(render_markers) {
@@ -59,10 +62,10 @@ struct SDLBackend: renderer {
                         else
                             SDL_SetRenderDrawColor(this->renderer, COLOR_WALL);
                     } else {
-                        int color = blocks[y * res.x + x];
+                        int color = blocks[y * width + x];
                         int r = color & 0xFF;
-                        int g = ((float)x / res.x) * 255;
-                        int b = ((float)y / res.y) * 255;
+                        int g = ((float)x / width) * 255;
+                        int b = ((float)y / height) * 255;
                         SDL_SetRenderDrawColor(this->renderer, r, g, b, 255);
                     }
                 } else {

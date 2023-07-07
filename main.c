@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
 #include <stddef.h>
@@ -6,6 +7,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "backends/bitmap.h"
+#include "bitmap.h"
 #include "gen.h"
 #include "backends/sdl.h"
 #include "backends/render.h"
@@ -25,7 +28,7 @@ void msleep(int milliseconds) {
 #define tabs(num) for(int i = 0; i < num; i++) putchar(' ')
 
 void map_render(map_t *map) {
-    renderer_render_blocks(render, map->blocks, (v2){map->width, map->height});
+    renderer_render_blocks(render, map);
 }
 
 void map_set_walls(map_t* map) {
@@ -51,10 +54,15 @@ void map_destroy(map_t *map) {
     free(map);
 }
 
+
+#define SKIP 1000
 void render_map_step(random_map_data_t* data) {
+    static int step = SKIP;
     if(renderer_should_close(render)) exit(-1);
-    // msleep(1000/data->fps);
-    // map_render(data->map);
+    if(step-- <= 0) {
+        map_render(data->map);
+        step = SKIP;
+    }
     return;
 }
 
@@ -72,18 +80,14 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         scale = atof(argv[1]);
     }
-    render = renderer_new_sdl(0.8);
+    // render = renderer_new_sdl(0.8);
+    render = renderer_new_bitmap(1920, 1080);
     v2 res = renderer_get_resolution(render);
     map_t *map = map_create(res.x, res.y);
     map_render(map);
     map_create_random(map, scale, 2000, render_map_step);
     map_render(map);
-    int dt = 1000.0/60.0;
-    while(time > 0) {
-        if(renderer_should_close(render)) break;
-        msleep(dt);
-    }
+    renderer_free(render);
     map_destroy(map);
-    free(render);
     return 0;
 }

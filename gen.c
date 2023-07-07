@@ -64,9 +64,9 @@ static void resize_stack(random_map_data_t* data, size_t new_cap) {
         new_cap = 128;
     }
     assert(new_cap > data->stack_cap);
-    /* FILE* fp = fopen("log.txt", "a");
+    FILE* fp = fopen("log.txt", "a");
     fprintf(fp, "%lu\n", new_cap);
-    fclose(fp); */
+    fclose(fp);
     data->stack = realloc(data->stack, sizeof(map_gen_frame_t) * new_cap);
     data->stack_cap = new_cap;
 }
@@ -143,6 +143,8 @@ static void create_random_walls(random_map_data_t* data, v2 start) {
     data->stack_cap = 0;
     return;
 }
+
+#define render(data) data.on_update(&data);
 
 void map_create_random(map_t *map, float scale, int fps, random_map_update on_update) {
     int holeup = randint(1, map->width-1);

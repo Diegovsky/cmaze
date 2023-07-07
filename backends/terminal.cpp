@@ -14,14 +14,15 @@ extern "C" {
 struct TermBackend: renderer {
 public:
     TermBackend() {
-        v2 res = get_resolution();
-        // for(int i = 0; i < );
     }
-    void render_blocks(block_t* blocks, v2 res) override {
+    void render_blocks(map_t* map) override {
+        block_t* blocks = map->blocks;
+        int width = map->width;
+        int height = map->height;
         printf("\33[0;0H");
-        for (int y = 0; y < res.y; y++) {
-            for (int x = 0; x < res.x; x++) {
-                printf("%c", !blocks[y * res.x + x] ? '#' : ' ');
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                printf("%c", !blocks[y * width + x] ? '#' : ' ');
             }
             printf("\n");
         }
