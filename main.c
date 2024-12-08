@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
         scale = atof(argv[1]);
     }
     // render = renderer_new_sdl(0.8);
-    render = renderer_new_bitmap(1920, 1080);
+    render = renderer_new_bitmap(400, 400, "out/img");
     v2 res = renderer_get_resolution(render);
     map_t *map = map_create(res.x, res.y);
     map_render(map);
